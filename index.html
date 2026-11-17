@@ -30,13 +30,17 @@ button{font:inherit;color:inherit;border:0;background:var(--card);border-radius:
 .sl span{font-size:14px;color:var(--mut);padding-left:44px;pointer-events:none}
 .knob{position:absolute;left:4px;top:4px;width:40px;height:40px;border-radius:50%;background:var(--A);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;touch-action:none;cursor:grab}
 .cls{width:100%;margin:6px 0 10px;padding:9px 0}
-</style></head><body>
+#cal{touch-action:pan-y}.c.pay::before{content:"₺";position:absolute;left:3px;top:1px;font-size:9px;color:var(--ok);opacity:.85}.payc{display:flex;justify-content:space-between;align-items:center;background:var(--card);border-left:4px solid var(--ok);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.payc b{color:var(--ok);font-size:16px}.payc span{color:var(--mut);font-size:13px}
+.c.pay{background:color-mix(in srgb,var(--ok) 16%,var(--card))}
+.c.pay::before{left:2px;top:2px;font-size:10px;font-weight:700;background:var(--ok);color:#fff;border-radius:4px;padding:0 3px;line-height:14px;opacity:1}</style></head><body>
 <h1>Vardiya ve tatil</h1>
+<div class="payc" id="pay"></div>
 <div class="pick" id="grp"></div>
 <div class="pick" id="yr"></div>
-<div class="nav"><button id="prev">‹</button><strong id="mt"></strong><button id="next">›</button></div>
+<div class="nav"><strong id="mt"></strong><small class="mut">sağa sola kaydırarak ay değiştir</small></div>
 <div class="cal" id="cal"></div><div id="pend"></div>
-<p class="mut" id="note">Kırmızı çerçeve resmi tatil. Tatile denk gelen vardiya gününe dokununca “çalıştım” işaretlenir.</p>
+<p class="mut" id="note">Kırmızı çerçeve resmi tatil. Tatile denk gelen vardiya gününe dokununca “çalıştım” işaretlenir. ₺ her ayın 5’i maaş günü.</p>
 <details><summary id="sm"></summary><div id="list"></div></details>
 <script>
 const S={A1:"GGAANNIIGGAANNIIIGAANNIIGGAANIII",A2:"GGAANNIIIGAANNIIGGAANIIIGGAANNII",A3:"IGAANNIIGGAANIIIGGAANNIIGGAANNII",A4:"GGAANIIIGGAANNIIGGAANNIIIGAANNII",
@@ -58,16 +62,20 @@ const save=()=>{try{localStorage.setItem("vardiya26",JSON.stringify(st))}catch(e
 const wid=k=>(yr==2026?"":yr+"|")+st.g+"|"+k,wk=k=>st.w[wid(k)],HM=()=>Object.fromEntries(HY[yr]);
 function render(){
   if(pend&&+pend.slice(0,2)!=mo+1)pend=null;
+  const nw=new Date(),p0=new Date(nw.getFullYear(),nw.getMonth(),nw.getDate()),GN=["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
+  let pd=new Date(p0.getFullYear(),p0.getMonth(),5);if(pd<p0)pd=new Date(p0.getFullYear(),p0.getMonth()+1,5);
+  const dl=Math.round((pd-p0)/864e5);
+  document.getElementById("pay").innerHTML=dl==0?"<b>₺ Bugün maaş günü</b>":`<b>₺ Maaşa ${dl} gün</b><span>${pd.getDate()} ${AY[pd.getMonth()]} ${GN[pd.getDay()]}</span>`;
   const sl=(id,t)=>`<div class="sl" data-sl="${id}"><div class="knob">›</div><span>${t}</span></div>`,cls='<button class="cls" data-cl="1">Kapat</button>';
   document.getElementById("grp").innerHTML=go?`<div class="ylist">${Object.keys(S).map(g=>`<button class="${g==st.g?"on":""}" data-g="${g}">${g}</button>`).join("")}</div>`+cls:sl("g",`Ekip ${st.g} · değiştirmek için kaydır`);
   document.getElementById("yr").innerHTML=yo?`<div class="ylist">${Object.keys(HY).map(y=>`<button class="${y==yr?"on":""}" data-y="${y}">${y}</button>`).join("")}</div>`+cls:sl("y",`${yr} · yılı değiştirmek için kaydır`);
   document.getElementById("mt").textContent=AY[mo]+" "+yr;
-  document.getElementById("prev").disabled=yr==2026&&mo==0;document.getElementById("next").disabled=yr==2032&&mo==11;
-  document.getElementById("note").textContent=yr>=2028?yr+" vardiyaları 2026 döngüsünün devamıdır. Dini bayramlar henüz eklenmedi, sabit milli tatiller var.":yr==2027?"2027 vardiyaları 2026 döngüsünün devamıdır. Kurum yeni tablo verirse güncellenir.":"Kırmızı çerçeve resmi tatil. Tatile denk gelen vardiya gününe dokununca “çalıştım” işaretlenir.";
+  
+  document.getElementById("note").textContent=yr>=2028?yr+" vardiyaları 2026 döngüsünün devamıdır. Dini bayramlar henüz eklenmedi, sabit milli tatiller var.":yr==2027?"2027 vardiyaları 2026 döngüsünün devamıdır. Kurum yeni tablo verirse güncellenir.":"Kırmızı çerçeve resmi tatil. Tatile denk gelen vardiya gününe dokununca “çalıştım” işaretlenir. ₺ her ayın 5’i maaş günü.";
   const hm=HM(),first=(new Date(yr,mo,1).getDay()+6)%7,n=new Date(yr,mo+1,0).getDate();
   let h="PSÇPCCP".split("").map(x=>`<div class="dow">${x}</div>`).join("")+'<div class="c pad"></div>'.repeat(first);
   for(let d=1;d<=n;d++){const k=key(mo+1,d),s=shift(st.g,yr,mo+1,d);
-    h+=`<div class="c ${s} ${hm[k]?"hol":""} ${wk(k)?"w":""} ${now.getFullYear()==yr&&now.getMonth()==mo&&now.getDate()==d?"today":""}" data-k="${k}"><span>${d}</span>${s!="I"?`<em>${LAB[s]}</em>`:""}</div>`}
+    h+=`<div class="c ${s} ${hm[k]?"hol":""} ${d==5?"pay":""} ${wk(k)?"w":""} ${now.getFullYear()==yr&&now.getMonth()==mo&&now.getDate()==d?"today":""}" data-k="${k}"><span>${d}</span>${s!="I"?`<em>${LAB[s]}</em>`:""}</div>`}
   document.getElementById("cal").innerHTML=h;document.getElementById("pend").innerHTML=pend?`<div class="bar"><span>${+pend.slice(3)} ${AY[mo]}: ${wk(pend)?"çalıştım işaretini kaldır":"çalıştım olarak işaretle"}?</span><button class="ok" data-ok="1">Evet</button><button data-no="1">Vazgeç</button></div>`:"";
   let tot=0,w=0;
   document.getElementById("list").innerHTML=HY[yr].map(([k,name])=>{const [m,d]=k.split("-").map(Number),s=shift(st.g,yr,m,d);
@@ -76,10 +84,13 @@ function render(){
   document.getElementById("sm").textContent=`Tatilde çalıştım: ${w} / ${tot}`;
 }
 function toggle(k){const [m,d]=k.split("-").map(Number);if(shift(st.g,yr,m,d)=="I"||!HM()[k])return;const id=wid(k);st.w[id]?delete st.w[id]:st.w[id]=1;save();render()}
-document.addEventListener("click",e=>{if(skip){skip=false;return}const b=e.target.closest("[data-cl],[data-g],[data-y],[data-ok],[data-no],[data-k]");if(!b)return;const D=b.dataset;
+document.addEventListener("click",e=>{if(skip){skip=false;return}if(Date.now()-swAt<400)return;const b=e.target.closest("[data-cl],[data-g],[data-y],[data-ok],[data-no],[data-k]");if(!b)return;const D=b.dataset;
   if(D.go){if(go){go=false;render()}}else if(D.g){st.g=D.g;go=false;pend=null;save();render()}else if(D.ok){const k=pend;pend=null;toggle(k)}else if(D.no){pend=null;render()}else if(D.cl){go=false;yo=false;render()}else if(D.y){yo=false;yr=+D.y;mo=now.getFullYear()==yr?now.getMonth():0;render()}else if(b.classList.contains("c")){const [m,d]=D.k.split("-").map(Number);if(HM()[D.k]&&shift(st.g,yr,m,d)!="I"){pend=D.k;render()}}else toggle(D.k)});
-document.getElementById("prev").onclick=()=>{if(mo==0){yr--;mo=11}else mo--;render()};
-document.getElementById("next").onclick=()=>{if(mo==11){yr++;mo=0}else mo++;render()};
+const step=d=>{let y=yr,m=mo+d;if(m<0){y--;m=11}if(m>11){y++;m=0}if(!HY[y])return;yr=y;mo=m;pend=null;render();document.getElementById("cal").animate([{transform:`translateX(${d*40}px)`,opacity:0},{transform:"none",opacity:1}],{duration:220})};
+let sw0=null,swAt=0;const calEl=document.getElementById("cal");
+calEl.addEventListener("pointerdown",e=>{sw0={x:e.clientX,y:e.clientY}});
+calEl.addEventListener("pointerup",e=>{if(!sw0)return;const dx=e.clientX-sw0.x,dy=e.clientY-sw0.y;sw0=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){swAt=Date.now();step(dx<0?1:-1)}});
+calEl.addEventListener("pointercancel",()=>{sw0=null});
 let lp=null,skip=false;
 document.addEventListener("pointerdown",e=>{skip=false;const b=e.target.closest("[data-go],[data-yo]");if(!b)return;clearTimeout(lp);lp=setTimeout(()=>{lp=null;skip=true;if(b.dataset.go){go=!go;yo=false}else{yo=!yo;go=false}render();if(navigator.vibrate)navigator.vibrate(30)},600)});
 ["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>{clearTimeout(lp);lp=null}));
